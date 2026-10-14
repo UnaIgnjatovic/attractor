@@ -9,7 +9,7 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
-from openai import OpenAI
+from openai import APIConnectionError, OpenAI
 
 load_dotenv()
 base_url = os.environ.get("LLM_BASE_URL")
@@ -24,21 +24,24 @@ if not results.exists():
 table = results.read_text()
 
 client = OpenAI(base_url=base_url, api_key=api_key)
-reply = client.chat.completions.create(
-    model=model,
-    temperature=0,
-    max_tokens=200,
-    extra_body={"chat_template_kwargs": {"enable_thinking": False}},
-    messages=[
-        {
-            "role": "user",
-            "content": (
-                "The table below gives the cycle period, in days, of the algae density in ten "
-                "chemostat predator-prey experiments (runs C1 to C10). Describe the periods in "
-                "two sentences, quoting the shortest and the longest.\n\n" + table
-            ),
-        }
-    ],
-)
+try:
+    reply = client.chat.completions.create(
+        model=model,
+        temperature=0,
+        max_tokens=200,
+        extra_body={"chat_template_kwargs": {"enable_thinking": False}},
+        messages=[
+            {
+                "role": "user",
+                "content": (
+                    "The table below gives the cycle period, in days, of the algae density in ten "
+                    "chemostat predator-prey experiments (runs C1 to C10). Describe the periods in "
+                    "two sentences, quoting the shortest and the longest.\n\n" + table
+                ),
+            }
+        ],
+    )
+except APIConnectionError:
+    raise SystemExit(f"ask_llm.py: cannot reach {base_url}; set LLM_BASE_URL in .env and run source setup_env.sh again")
 print(f"[{model} at {base_url}]")
 print(reply.choices[0].message.content.strip())

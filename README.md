@@ -9,20 +9,35 @@ few minutes on a laptop or on a Linux workstation.
 ## Setup
 
 ```bash
-git clone https://github.com/borisbolliet/attractor.git
-cd attractor
-source setup_env.sh          # python3.12 venv, locked packages, .env, Jupyter kernel
+git clone https://github.com/borisbolliet/attractor.git ~/GitHub/attractor
+cd ~/GitHub/attractor
+source setup_env.sh          # python3.12 venv, locked packages, .env, Jupyter kernel attractor-py312
 python analyse.py            # table of periods, results/periods.csv, results/periods.png
 python ask_llm.py            # optional: two sentences about the table from a language model
 ```
 
-`source setup_env.sh` takes about 12 s with a warm pip cache (lecture laptop,
-Python 3.12.12) and 13 s on the workstation (Python 3.12.3). A second
-`source setup_env.sh` only prints the environment report. The script must be
-sourced: run as `./setup_env.sh` it stops with a one-line message, because a
-script that runs in a child shell cannot activate a venv in the calling shell.
+The clone goes to `~/GitHub/attractor` so that it does not collide with the
+`~/attractor` directory of the first lectures of the course. `source
+setup_env.sh` typically takes 10 to 15 s with a warm pip cache (lecture
+laptop, Python 3.12.12; workstation, Python 3.12.3). A second `source
+setup_env.sh` only prints the environment report. The script must be sourced:
+run as `./setup_env.sh` it stops with a one-line message, because a script
+that runs in a child shell cannot activate a venv in the calling shell.
+
 Python 3.12 is expected as `python3.12`; another interpreter is selected with
-`PYTHON=/path/to/python3.12 source setup_env.sh`.
+`PYTHON=/path/to/python3.12 source setup_env.sh`. Obtaining 3.12: macOS,
+`brew install python@3.12`; Ubuntu 24.04, `sudo apt install python3.12-venv`;
+any system, `uv python install 3.12` then
+`PYTHON="$(uv python find 3.12)" source setup_env.sh`.
+
+`ask_llm.py` needs an OpenAI-compatible chat endpoint in `LLM_BASE_URL`: the
+course endpoint given in the lecture, a local `llama-server` or Ollama
+(`http://localhost:11434/v1`), or `https://api.openai.com/v1` with a real
+`LLM_API_KEY` and `LLM_MODEL`. The value is written in `.env`. After editing
+`.env`, run `source setup_env.sh` again: the shell still holds the exported
+placeholder and `load_dotenv()` does not override it. With the placeholder
+left in place the script stops with `ask_llm.py: cannot reach
+http://localhost:8080/v1; set LLM_BASE_URL in .env and run source setup_env.sh again`.
 
 ## Three layers of a reproducible environment
 
@@ -42,8 +57,9 @@ Python 3.12 is expected as `python3.12`; another interpreter is selected with
 3. **The setup script.** `setup_env.sh` turns the two files above into a
    working shell: it creates `.venv` with `python3.12`, activates it, installs
    the lock, creates `.env` if missing, exports its variables
-   (`set -a; . ./.env; set +a`), registers the Jupyter kernel `attractor`
-   and prints `check_env.py`.
+   (`set -a; . ./.env; set +a`), registers the Jupyter kernel
+   `attractor-py312` (display name `Python (attractor 3.12)`, distinct from
+   the `attractor` kernel of the first lectures) and prints `check_env.py`.
 
 ## Files
 
@@ -54,13 +70,13 @@ Python 3.12 is expected as `python3.12`; another interpreter is selected with
 | `period.py` | the same computation for one run: `python period.py data/C9.csv` |
 | `check_env.py` | interpreter, NumPy version and location, and the project variables |
 | `ask_llm.py` | sends `results/periods.csv` to an OpenAI-compatible endpoint (`LLM_BASE_URL`) and prints a two-sentence description |
-| `requirements.txt` | package specification |
+| `requirements.txt` | package specification: the four imported packages and ipykernel |
 | `requirements-lock.txt` | exact versions, `pip freeze`, Python 3.12 |
 | `.env.example` | configuration template; copied to `.env` by `setup_env.sh` |
 | `setup_env.sh` | one-step setup, to be sourced |
 | `.gitignore` | `.venv/`, `.env`, `results/`, `__pycache__/`, `.ipynb_checkpoints/` |
 
-## Why Python 3.12
+## Python 3.12 and the NumPy 1.26.4 wheels
 
 The course interpreter is Python 3.13. The scripts were written in 2024 against
 NumPy 1.26, and the lock pins `numpy==1.26.4`, the last 1.x release. NumPy
@@ -70,7 +86,7 @@ NumPy 1.26, and the lock pins `numpy==1.26.4`, the last 1.x release. NumPy
 `--only-binary`, pip downloads `numpy-1.26.4.tar.gz` (15.8 MB) and compiles
 it, which took 21 s on the lecture laptop and fails on a machine without a
 C compiler.
-With the loose `requirements.txt` instead, pip resolves `numpy>=1.26` to the
+With the specification `requirements.txt` instead, pip resolves `numpy>=1.26` to the
 newest NumPy 2.x, and `analyse.py` stops with
 
 ```
@@ -82,8 +98,8 @@ same table on screen and different digits in `results/periods.csv`:
 `C9,141,17,8.059374809265137` under NumPy 1.26.4 and `C9,141,17,8.059375`
 under NumPy 2.5.4. The data are loaded as `float32`; the period is a
 `float32` scalar divided by a Python `int`, which NumPy 1 promotes to
-`float64` and NumPy 2 keeps in `float32` (NEP 50). Pinning the interpreter
-and the lock is what keeps the 2024 numbers.
+`float64` and NumPy 2 keeps in `float32` (NEP 50). The 2024 digits are
+reproduced with Python 3.12 and the lock.
 
 ## Method
 
