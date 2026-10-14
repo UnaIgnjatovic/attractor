@@ -74,7 +74,7 @@ http://localhost:8080/v1; set LLM_BASE_URL in .env and run source setup_env.sh a
 | `requirements-lock.txt` | exact versions, `pip freeze`, Python 3.12 |
 | `.env.example` | configuration template; copied to `.env` by `setup_env.sh` |
 | `setup_env.sh` | one-step setup, to be sourced |
-| `.gitignore` | `.venv/`, `.env`, `results/`, `__pycache__/`, `.ipynb_checkpoints/` |
+| `.gitignore` | `.venv*/`, `.env`, `results*/`, `__pycache__/`, `.ipynb_checkpoints/` (also `.venv313` and `results-np1`, `results-np2` of the lecture) |
 
 ## Python 3.12 and the NumPy 1.26.4 wheels
 
