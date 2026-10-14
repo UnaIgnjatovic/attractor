@@ -1,0 +1,6 @@
+# Specification: the packages the scripts import, with the oldest usable versions.
+numpy>=1.26
+matplotlib>=3.8
+python-dotenv
+openai
+ipykernel
