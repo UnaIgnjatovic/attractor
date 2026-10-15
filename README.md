@@ -11,7 +11,7 @@ few minutes on a laptop or on a Linux workstation.
 ```bash
 git clone https://github.com/borisbolliet/attractor.git ~/GitHub/attractor
 cd ~/GitHub/attractor
-source setup_env.sh          # python3.12 venv, locked packages, .env, Jupyter kernel attractor-py312
+source setup_env.sh          # Python 3.12 venv, pinned packages, .env, Jupyter kernel attractor-py312
 python analyse.py            # table of periods, results/periods.csv, results/periods.png
 python ask_llm.py            # optional: two sentences about the table from a language model
 ```
@@ -39,12 +39,14 @@ placeholder and `load_dotenv()` does not override it. With the placeholder
 left in place the script stops with `ask_llm.py: cannot reach
 http://localhost:8080/v1; set LLM_BASE_URL in .env and run source setup_env.sh again`.
 
-## Three layers of a reproducible environment
+## Environment files
 
-1. **Interpreter and packages.** `requirements.txt` is the hand-written
-   specification (`numpy>=1.26`, `matplotlib>=3.8`, ...). `requirements-lock.txt`
-   is the exact set of 52 packages, produced by `pip freeze` in a Python 3.12
-   venv on 2026-10-14; it is what `setup_env.sh` installs. The venv itself,
+1. **Interpreter and packages.** `requirements.txt` gives package
+   constraints (`numpy>=1.26`, `matplotlib>=3.8`, ...). `requirements-lock.txt`
+   is a `pip freeze` snapshot of 52 installed distributions from a Python
+   3.12.12 macOS arm64 environment, created on 2026-10-14. `pip freeze`
+   reports installed versions; it does not solve requirements or create a
+   cross-platform lockfile. `setup_env.sh` installs the snapshot. The venv,
    `.venv/`, is a build product and is not committed.
 2. **Configuration.** `.env.example` lists every variable the scripts read
    (`DATA_PATH`, `RESULTS_PATH`, `OMP_NUM_THREADS`, `MPLBACKEND`, `LLM_BASE_URL`,
@@ -54,9 +56,9 @@ http://localhost:8080/v1; set LLM_BASE_URL in .env and run source setup_env.sh a
    in the shell takes precedence over `.env`, so
    `RESULTS_PATH=/tmp/out python analyse.py` writes elsewhere without editing
    the file.
-3. **The setup script.** `setup_env.sh` turns the two files above into a
+3. **Setup script.** `setup_env.sh` uses these files to create a
    working shell: it creates `.venv` with `python3.12`, activates it, installs
-   the lock, creates `.env` if missing, exports its variables
+   the package snapshot, creates `.env` if missing, exports its variables
    (`set -a; . ./.env; set +a`), registers the Jupyter kernel
    `attractor-py312` (display name `Python (attractor 3.12)`, distinct from
    the `attractor` kernel of the first lectures) and prints `check_env.py`.
@@ -69,9 +71,9 @@ http://localhost:8080/v1; set LLM_BASE_URL in .env and run source setup_env.sh a
 | `analyse.py` | period of every run from the peaks of the algae density; writes `results/periods.csv` and `results/periods.png` |
 | `period.py` | the same computation for one run: `python period.py data/C9.csv` |
 | `check_env.py` | interpreter, NumPy version and location, and the project variables |
-| `ask_llm.py` | sends `results/periods.csv` to an OpenAI-compatible endpoint (`LLM_BASE_URL`) and prints a two-sentence description |
+| `ask_llm.py` | sends `results/periods.csv` to an OpenAI-compatible endpoint (`LLM_BASE_URL`) and reports the shortest and longest periods |
 | `requirements.txt` | package specification: the four imported packages and ipykernel |
-| `requirements-lock.txt` | exact versions, `pip freeze`, Python 3.12 |
+| `requirements-lock.txt` | `pip freeze` snapshot, Python 3.12.12 on macOS arm64 |
 | `.env.example` | configuration template; copied to `.env` by `setup_env.sh` |
 | `setup_env.sh` | one-step setup, to be sourced |
 | `.gitignore` | `.venv*/`, `.env`, `results*/`, `__pycache__/`, `.ipynb_checkpoints/` (also `.venv313` and `results-np1`, `results-np2` of the lecture) |
@@ -79,7 +81,7 @@ http://localhost:8080/v1; set LLM_BASE_URL in .env and run source setup_env.sh a
 ## Python 3.12 and the NumPy 1.26.4 wheels
 
 The course interpreter is Python 3.13. The scripts were written in 2024 against
-NumPy 1.26, and the lock pins `numpy==1.26.4`, the last 1.x release. NumPy
+NumPy 1.26, and the package snapshot pins `numpy==1.26.4`, the last 1.x release. NumPy
 1.26.4 ships wheels for Python 3.9 to 3.12 only. On Python 3.13,
 `pip install --only-binary=:all: -r requirements-lock.txt` stops with
 `ERROR: No matching distribution found for numpy==1.26.4`; without
@@ -93,13 +95,16 @@ newest NumPy 2.x, and `analyse.py` stops with
 AttributeError: `np.NaN` was removed in the NumPy 2.0 release. Use `np.nan` instead.
 ```
 
-Replacing `np.NaN` by `np.nan` makes the script run under NumPy 2, with the
-same table on screen and different digits in `results/periods.csv`:
+Replacing `np.NaN` by `np.nan` makes the script run under NumPy 2. The table
+on screen is unchanged, while the decimal strings in `results/periods.csv`
+differ:
 `C9,141,17,8.059374809265137` under NumPy 1.26.4 and `C9,141,17,8.059375`
 under NumPy 2.5.4. The data are loaded as `float32`; the period is a
 `float32` scalar divided by a Python `int`, which NumPy 1 promotes to
-`float64` and NumPy 2 keeps in `float32` (NEP 50). The 2024 digits are
-reproduced with Python 3.12 and the lock.
+`float64` and NumPy 2 keeps in `float32` (NEP 50). For C9, both strings
+convert to the same binary value, 8.059374809265137; NumPy 2 writes the
+shortest decimal that round-trips to that value. The 2024 output is
+reproduced with Python 3.12 and the package snapshot.
 
 ## Method
 

@@ -21,7 +21,12 @@ model = os.environ.get("LLM_MODEL", "qwen3.8-flash-next")
 results = Path(os.environ.get("RESULTS_PATH", "results")) / "periods.csv"
 if not results.exists():
     raise SystemExit(f"ask_llm.py: {results} not found; run python analyse.py first")
-table = results.read_text()
+rows = [line.split(",") for line in results.read_text().splitlines() if line]
+# periods to three decimals, as printed by analyse.py; the file holds the full repr
+table = "\n".join(
+    ",".join(r) if i == 0 else ",".join(r[:3] + [f"{float(r[3]):.3f}"])
+    for i, r in enumerate(rows)
+)
 
 client = OpenAI(base_url=base_url, api_key=api_key)
 try:
@@ -34,9 +39,10 @@ try:
             {
                 "role": "user",
                 "content": (
-                    "The table below gives the cycle period, in days, of the algae density in ten "
-                    "chemostat predator-prey experiments (runs C1 to C10). Describe the periods in "
-                    "two sentences, quoting the shortest and the longest.\n\n" + table
+                    "The table gives estimated cycle periods, in days, for runs C1 to C10. "
+                    "Return exactly two lines: 'Shortest: <run>, <value> days' and "
+                    "'Longest: <run>, <value> days'. Use the values in the table. "
+                    "Do not add commentary.\n\n" + table
                 ),
             }
         ],

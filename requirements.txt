@@ -1,4 +1,4 @@
-# Specification: the four packages the scripts import, with the oldest usable versions,
+# Specification: lower bounds for imported packages,
 # plus ipykernel for the notebook kernel.
 numpy>=1.26
 matplotlib>=3.8

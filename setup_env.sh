@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# setup_env.sh -- virtual environment, locked packages, .env and Jupyter kernel
+# setup_env.sh -- virtual environment, pinned package snapshot, .env and Jupyter kernel
 # of the attractor project, in one step.
 #
 # Usage, from the repository root, in bash or zsh:
@@ -35,7 +35,7 @@ setup_env() {
 
     . .venv/bin/activate || return 1
 
-    # packages and kernel are installed once per venv; a newer lock file triggers a reinstall
+    # packages and kernel are installed once per venv; a newer snapshot triggers a reinstall
     if [ ! -f .venv/lock.stamp ] || [ requirements-lock.txt -nt .venv/lock.stamp ]; then
         echo "setup_env.sh: installing requirements-lock.txt"
         python -m pip install --quiet --disable-pip-version-check -r requirements-lock.txt || return 1

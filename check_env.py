@@ -24,7 +24,7 @@ print(f"{'PYTHONPATH':<16}{os.environ.get('PYTHONPATH', '(unset)')}")
 defaults = {
     "DATA_PATH": "data",
     "RESULTS_PATH": "results",
-    "OMP_NUM_THREADS": "(unset: all cores)",
+    "OMP_NUM_THREADS": "(unset; library default)",
     "MPLBACKEND": "(unset: Agg in analyse.py)",
     "LLM_BASE_URL": "(unset)",
     "LLM_MODEL": "(unset)",
